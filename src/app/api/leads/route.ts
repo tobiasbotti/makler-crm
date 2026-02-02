@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLeads, createLead } from "@/lib/airtable";
+import { isDemoMode, demoGetLeads } from "@/lib/demo-data";
 import { LeadStatus } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") as LeadStatus | null;
+
+    if (isDemoMode()) {
+      return NextResponse.json(demoGetLeads(status || undefined));
+    }
 
     const leads = await getLeads(status || undefined);
     return NextResponse.json(leads);
@@ -27,6 +32,10 @@ export async function POST(request: NextRequest) {
         { error: "Name und E-Mail sind Pflichtfelder" },
         { status: 400 }
       );
+    }
+
+    if (isDemoMode()) {
+      return NextResponse.json({ id: `demo-new-${Date.now()}`, ...body, status: "Neu" }, { status: 201 });
     }
 
     const lead = await createLead(body);

@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllContacts } from "@/lib/propstack";
 import { createLead, findLeadByEmail } from "@/lib/airtable";
+import { isDemoMode, demoSyncPropstack } from "@/lib/demo-data";
 import { SyncResult } from "@/lib/types";
 
 /**
  * POST /api/sync/propstack
  *
  * Syncs contacts from Propstack into Airtable.
- * - Fetches all contacts (or only updated after a given date)
- * - Checks for duplicates by email
- * - Creates new leads for contacts not yet in Airtable
+ * In demo mode: simulates a sync with fake new contacts.
  */
 export async function POST(request: NextRequest) {
   try {
+    if (isDemoMode()) {
+      const result = demoSyncPropstack();
+      return NextResponse.json({
+        success: true,
+        summary: `${result.created} erstellt, ${result.skipped} übersprungen, 0 Fehler`,
+        ...result,
+        errors: [],
+      });
+    }
+
     const body = await request.json().catch(() => ({}));
     const updatedAfter = body.updated_after as string | undefined;
 
@@ -28,20 +37,17 @@ export async function POST(request: NextRequest) {
       try {
         const email = contact.email;
 
-        // Skip contacts without email (can't deduplicate)
         if (!email) {
           result.skipped++;
           continue;
         }
 
-        // Duplicate check by email
         const existing = await findLeadByEmail(email);
         if (existing) {
           result.skipped++;
           continue;
         }
 
-        // Create new lead
         const name = [contact.first_name, contact.last_name]
           .filter(Boolean)
           .join(" ")

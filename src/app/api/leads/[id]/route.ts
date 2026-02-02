@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLead, updateLead } from "@/lib/airtable";
+import { isDemoMode, demoGetLead, demoUpdateLead } from "@/lib/demo-data";
 
 export async function GET(
   _request: NextRequest,
@@ -7,15 +8,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const lead = await getLead(id);
 
-    if (!lead) {
-      return NextResponse.json(
-        { error: "Lead nicht gefunden" },
-        { status: 404 }
-      );
+    if (isDemoMode()) {
+      const lead = demoGetLead(id);
+      if (!lead) return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+      return NextResponse.json(lead);
     }
 
+    const lead = await getLead(id);
+    if (!lead) {
+      return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+    }
     return NextResponse.json(lead);
   } catch (error) {
     console.error("Error fetching lead:", error);
@@ -33,6 +36,13 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
+
+    if (isDemoMode()) {
+      const lead = demoUpdateLead(id, body);
+      if (!lead) return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+      return NextResponse.json(lead);
+    }
+
     const lead = await updateLead(id, body);
     return NextResponse.json(lead);
   } catch (error) {

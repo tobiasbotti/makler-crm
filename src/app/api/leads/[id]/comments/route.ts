@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addComment, getLead } from "@/lib/airtable";
 import { createNote } from "@/lib/propstack";
+import { isDemoMode, demoAddComment, demoGetLead } from "@/lib/demo-data";
 import { Comment } from "@/lib/types";
 
 export async function POST(
@@ -25,6 +26,12 @@ export async function POST(
       timestamp: new Date().toISOString(),
     };
 
+    if (isDemoMode()) {
+      const lead = demoAddComment(id, comment);
+      if (!lead) return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+      return NextResponse.json(lead);
+    }
+
     // Save comment to Airtable
     const updatedLead = await addComment(id, comment);
 
@@ -36,7 +43,6 @@ export async function POST(
           contact_id: parseInt(updatedLead.propstackUid, 10),
         });
       } catch (propstackError) {
-        // Log but don't fail - Airtable is the source of truth
         console.error("Propstack write-back failed:", propstackError);
       }
     }
@@ -57,15 +63,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const lead = await getLead(id);
 
-    if (!lead) {
-      return NextResponse.json(
-        { error: "Lead nicht gefunden" },
-        { status: 404 }
-      );
+    if (isDemoMode()) {
+      const lead = demoGetLead(id);
+      if (!lead) return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+      return NextResponse.json(lead.kommentarHistorie);
     }
 
+    const lead = await getLead(id);
+    if (!lead) {
+      return NextResponse.json({ error: "Lead nicht gefunden" }, { status: 404 });
+    }
     return NextResponse.json(lead.kommentarHistorie);
   } catch (error) {
     console.error("Error fetching comments:", error);
