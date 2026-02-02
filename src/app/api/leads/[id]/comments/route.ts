@@ -6,10 +6,10 @@ import { Comment } from "@/lib/types";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
 
     if (!body.text) {
@@ -20,7 +20,7 @@ export async function POST(
     }
 
     const comment: Comment = {
-      id: crypto.randomUUID(),
+      id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       text: body.text,
       author: body.author || "Sales-Mitarbeiter",
       timestamp: new Date().toISOString(),
@@ -59,10 +59,10 @@ export async function POST(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
 
     if (isDemoMode()) {
       const lead = demoGetLead(id);

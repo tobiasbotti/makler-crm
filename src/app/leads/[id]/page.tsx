@@ -13,10 +13,9 @@ async function loadLead(id: string): Promise<Lead | null> {
 export default async function LeadDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
-  const lead = await loadLead(id);
+  const lead = await loadLead(params.id);
 
   if (!lead) {
     notFound();

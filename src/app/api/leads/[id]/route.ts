@@ -4,10 +4,10 @@ import { isDemoMode, demoGetLead, demoUpdateLead } from "@/lib/demo-data";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
 
     if (isDemoMode()) {
       const lead = demoGetLead(id);
@@ -31,10 +31,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
 
     if (isDemoMode()) {
